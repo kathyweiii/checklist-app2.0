@@ -1,6 +1,11 @@
 import React, { useState } from "react";
-// import { Route, Routes, useNavigate } from "react-router-dom";
-import { HashRouter as Router } from "react-router-dom";
+// import {
+//   BrowserRouter as Router,
+//   Route,
+//   Routes,
+//   useNavigate,
+// } from "react-router-dom";
+import { HashRouter as Router, Route, Routes } from "react-router-dom";
 
 import HomePage from "./containers/HomePage";
 import CheckList from "./containers/CheckList";
