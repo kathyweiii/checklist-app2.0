@@ -34,7 +34,6 @@ const Result = () => {
     userInput,
     uploadedImages,
   } = location.state; // 根據需要調整
-  // console.log("state: ", location.state);
 
   const [onlyNonCompliant, setOnlyNonCompliant] = useState(false);
   const [improvementField, setImprovementField] = useState(false);
@@ -46,6 +45,9 @@ const Result = () => {
   const [isLoading, setIsLoading] = useState(false); // 加载状态
 
   const pdfRef = useRef(null);
+
+  const [choosingResult, setChoosingResult] = useState(activeButtons);
+  const [groupedByRoadName, setGroupedByRoadName] = useState({});
 
   // 從 local storage 加載數據
   // useEffect(() => {
@@ -81,6 +83,44 @@ const Result = () => {
   //   }
   // }, []);
 
+  // useEffect(() => {
+  //   setCurrentPageCode(
+  //     `${selectedRoad}-${improvementField}-${onlyNonCompliant}`
+  //   );
+
+  //   const compliance = onlyNonCompliant
+  //     ? "具交通安全風險之項目"
+  //     : "所有檢核項目";
+  //   const name = `${selectedRoad}-${compliance}`;
+  //   setCurrentPageName(name);
+  //   console.log("gr:", groupedByRoadName);
+  //   setChoosingResult(onlyNonCompliant ? highlightRemarks : activeButtons);
+  // }, [selectedRoad, onlyNonCompliant, improvementField]);
+
+  // // const choosingResult = onlyNonCompliant ? highlightRemarks : activeButtons;
+  // const groupedByRoadName = roads.reduce((acc, road) => {
+  //   acc[road] = []; // 初始化每個路名的陣列
+
+  //   if (choosingResult[road]) {
+  //     Object.keys(choosingResult[road]).forEach((itemId) => {
+  //       const option = choosingResult[road][itemId];
+  //       const remark = userInput[road]?.[itemId] || "";
+  //       const image = uploadedImages[road]?.[itemId] || "";
+
+  //       acc[road].push({
+  //         id: itemId,
+  //         option: option,
+  //         remark: remark,
+  //         image: image,
+  //       });
+  //     });
+  //   }
+
+  //   // console.log("acc: ", acc, "len: ", acc.length);
+  //   return acc;
+  // }, {});
+
+  // 更新 currentPageCode 和 currentPageName
   useEffect(() => {
     setCurrentPageCode(
       `${selectedRoad}-${improvementField}-${onlyNonCompliant}`
@@ -91,30 +131,52 @@ const Result = () => {
       : "所有檢核項目";
     const name = `${selectedRoad}-${compliance}`;
     setCurrentPageName(name);
-  }, [selectedRoad, onlyNonCompliant, improvementField]);
 
-  const choosingResult = onlyNonCompliant ? highlightRemarks : activeButtons;
-  const groupedByRoadName = roads.reduce((acc, road) => {
-    acc[road] = []; // 初始化每個路名的陣列
+    // 更新 choosingResult
+    setChoosingResult(onlyNonCompliant ? userInput : activeButtons);
+  }, [
+    selectedRoad,
+    onlyNonCompliant,
+    improvementField,
+    highlightRemarks,
+    activeButtons,
+  ]);
 
-    if (choosingResult[road]) {
-      Object.keys(choosingResult[road]).forEach((itemId) => {
-        const option = activeButtons[road][itemId];
-        const remark = userInput[road]?.[itemId] || "";
-        const image = uploadedImages[road]?.[itemId] || "";
+  // 更新 groupedByRoadName 當 choosingResult 或其他依賴變數改變時
+  useEffect(() => {
+    const grouped = roads.reduce((acc, road) => {
+      acc[road] = []; // 初始化每個路名的陣列
 
-        acc[road].push({
-          id: itemId,
-          option: option,
-          remark: remark,
-          image: image,
+      if (choosingResult[road]) {
+        Object.keys(choosingResult[road]).forEach((itemId) => {
+          const option = activeButtons[road][itemId];
+          const remark = userInput[road]?.[itemId] || "";
+          const image = uploadedImages[road]?.[itemId] || "";
+
+          acc[road].push({
+            id: itemId,
+            option: option,
+            remark: remark,
+            image: image,
+          });
         });
-      });
-    }
+      }
+      return acc;
+    }, {});
 
-    // console.log("acc: ", acc, "len: ", acc.length);
-    return acc;
-  }, {});
+    setGroupedByRoadName(grouped); // 設置新的 groupedByRoadName
+  }, [choosingResult, roads, userInput, uploadedImages]);
+
+  useEffect(() => {
+    console.log("gr:", groupedByRoadName);
+  }, [groupedByRoadName]);
+
+  useEffect(() => {
+    //因為setChoosingResult, 更新groupedByRoadName
+  });
+
+  // 更新 groupedByRoadName 根據 onlyNonCompliant 狀態動態選擇數據來源
+  // const choosingResult = onlyNonCompliant ? highlightRemarks : activeButtons;
 
   // 根據檢查代碼的ID來獲取它所屬的sheet
   const getSheetById = (id) => {

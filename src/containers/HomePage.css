@@ -140,6 +140,13 @@ body {
     background-color: #218838;
   }
   
+  .footer {
+    margin-top: 20px;
+    padding: 10px;
+    text-align: center;
+    font-size: 0.9em;
+    color: #555;
+  }
   
   
   

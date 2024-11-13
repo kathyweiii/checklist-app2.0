@@ -213,6 +213,9 @@ function HomePage() {
           確定送出
         </button>
       </div>
+      <footer className="footer">
+        <p>交通部運輸研究所 | 亞聯工程顧問股份有限公司</p>
+      </footer>
     </div>
   );
 }

@@ -49,8 +49,8 @@ function CheckList() {
     console.log("from: ", location.state?.from);
 
     if (location.state?.from === "HomePage") {
-      localStorage.removeItem("checklistData");
-      console.log("delete checklistData");
+      localStorage.clear();
+      console.log("local: ", localStorage);
     } else {
       const loadedData = localStorage.getItem("checklistData");
       if (loadedData) {
@@ -139,6 +139,7 @@ function CheckList() {
 
   useEffect(() => {
     console.log("activeButtons: ", activeButtons);
+    console.log("user: ", userInput);
   }, [activeButtons]);
 
   // const handleImageUpload = (e, remarkId) => {
@@ -255,7 +256,7 @@ function CheckList() {
     };
 
     if (isSubmitEnabled) {
-      localStorage.setItem(
+      sessionStorage.setItem(
         "checklistData",
         JSON.stringify({
           roads,
