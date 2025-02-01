@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./HomePage.css";
+import MOTCLogo from "../assets/MOTC-logo.png";
+import ATCILogo from "../assets/ATCI-logo.png";
 
 function HomePage() {
   const [inspector, setInspector] = useState("");
@@ -73,6 +75,10 @@ function HomePage() {
 
   return (
     <div className="container">
+      <div className="header">
+        <img src={MOTCLogo} alt="MOTC Logo" className="logo" />
+        <img src={ATCILogo} alt="ATCI Logo" className="right-logo" />{" "}
+      </div>
       <h1>RSI道路交通安全檢查表</h1>
       <h2>資訊化填寫系統</h2>
       <div className="question">

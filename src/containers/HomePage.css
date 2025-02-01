@@ -148,9 +148,20 @@ body {
     color: #555;
   }
   
+  .header {
+    display: flex;
+    justify-content: space-between; /* 左右對齊 */
+    align-items: center; /* 垂直居中 */
+    padding: 10px 20px;
+  }
   
+  .logo {
+    width:50px; /* 調整左側 logo 大小 */
+  }
   
-  
+  .right-logo {
+    width: 70px; /* 調整右側 logo 大小 */
+  }
   
   
   
