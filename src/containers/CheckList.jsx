@@ -10,79 +10,92 @@ function CheckList() {
   const { locationName, type, roadNames, directions } = location.state || {}; //如果没有传入 state，则使用默认值
 
   // 默认值
-  const defaultLocationName = "某地點";
-  const defaultType = "intersection";
-  const defaultLegCount = 3;
-  const defaultRoadNames = ["路名1", "路名2", "路名3"];
-  const defaultDirections = ["東側", "南側", "西側"];
 
-  const currentLocationName = locationName || defaultLocationName;
-  const currentType = type || defaultType;
-  const currentRoadNames = roadNames || defaultLegCount;
-  // console.log("currentRoadNames: ", currentRoadNames);
-  const currentDirections = directions || defaultDirections;
-
-  const initialSheets = ["A", "B", "C", "D"];
+  const initialSheets = Object.keys(CheckItems);
+  const savedData = JSON.parse(localStorage.getItem("checklistData")) || {};
   const [activeSheet, setActiveSheet] = useState(initialSheets[0]);
 
-  const [activeButtons, setActiveButtons] = useState({});
-  const [userInput, setUserInput] = useState({});
-  const [highlightRemarks, setHighlightRemarks] = useState({});
-  const [isSubmitEnabled, setIsSubmitEnabled] = useState(false);
-  const [uploadedImages, setUploadedImages] = useState({});
-  const roads = currentRoadNames.map(
-    (road, index) => `${road}-${currentDirections[index]}`
+  const [activeButtons, setActiveButtons] = useState(
+    savedData.activeButtons || {}
   );
+  const [userInput, setUserInput] = useState(savedData.userInput || {});
+  const [highlightRemarks, setHighlightRemarks] = useState(
+    savedData.highlightRemarks || {}
+  );
+  const [uploadedImages, setUploadedImages] = useState(
+    savedData.uploadedImages || {}
+  );
+
+  const [isSubmitEnabled, setIsSubmitEnabled] = useState(false);
+
+  const roads = roadNames.map((road, index) => `${road}-${directions[index]}`);
 
   const [activeRoad, setActiveRoad] = useState(roads[0]);
 
   const choosingSheet = () => {
-    if (currentType === "intersection") {
+    if (type === "intersection") {
       return initialSheets;
     } else {
-      return ["A"];
+      return ["OA"];
     }
   };
 
-  // 從 local storage 加載數據
   useEffect(() => {
-    console.log("from: ", location.state?.from);
+    const toSave = {
+      activeButtons,
+      userInput,
+      highlightRemarks,
+      uploadedImages,
+    };
+    localStorage.setItem("checklistData", JSON.stringify(toSave));
+  }, [activeButtons, userInput, highlightRemarks, uploadedImages]);
 
-    if (location.state?.from === "HomePage") {
-      localStorage.clear();
-      console.log("local: ", localStorage);
-    } else {
-      const loadedData = localStorage.getItem("checklistData");
-      if (loadedData) {
-        const parsedData = JSON.parse(loadedData);
-        setActiveButtons(parsedData.activeButtons || {});
-        setUserInput(parsedData.userInput || {});
-        setHighlightRemarks(parsedData.highlightRemarks || {});
-        setUploadedImages(parsedData.uploadedImages || {});
-      }
-    }
-  }, [location]);
+  // 從 local storage 加載數據
+  // useEffect(() => {
+  //   // console.log("from: ", location.state?.from);
+
+  //   if (location.state?.from === "HomePage") {
+  //     localStorage.clear();
+  //     console.log("local: ", localStorage);
+  //   } else {
+  //     const loadedData = localStorage.getItem("checklistData");
+  //     if (loadedData) {
+  //       const parsedData = JSON.parse(loadedData);
+  //       setActiveButtons(parsedData.activeButtons || {});
+  //       setUserInput(parsedData.userInput || {});
+  //       setHighlightRemarks(parsedData.highlightRemarks || {});
+  //       setUploadedImages(parsedData.uploadedImages || {});
+  //     }
+  //   }
+  // }, [location]);
 
   //送出按鈕
   useEffect(() => {
     const checkFormValidity = () => {
       const totalCheckAmount = choosingSheet().reduce((sum, sheet) => {
-        const sheetItemCount =
-          CheckItems[sheet].length * currentRoadNames.length;
+        const sheetItemCount = CheckItems[sheet].length * roadNames.length;
         return sum + sheetItemCount;
       }, 0);
 
-      const totalActiveButtons = Object.values(activeButtons).reduce(
-        (sum, item) => {
-          return sum + Object.keys(item).length;
-        },
-        0
-      );
+      // const totalActiveButtons = Object.values(activeButtons).reduce(
+      //   (sum, item) => {
+      //     return sum + Object.keys(item).length;
+      //   },
+      //   0
+      // );
+      const totalActiveButtons = roads.reduce((sum, road) => {
+        const keys = Object.keys(activeButtons[road] || {});
+        console.log(`• 路段 [${road}] 已选按钮：`, keys);
+        return sum + keys.length;
+      }, 0);
+
+      console.log("→ 预期总按钮数 totalCheckAmount =", totalCheckAmount);
+      console.log("→ 实际总按钮数 totalActiveButtons =", totalActiveButtons);
 
       const allOptionsSelected = totalActiveButtons === totalCheckAmount;
 
-      const allRemarkFilled = initialSheets.every((sheet) => {
-        const remarksForSheet = highlightRemarks[sheet] || {};
+      const allRemarkFilled = roads.every((road) => {
+        const remarksForSheet = highlightRemarks[road] || {};
 
         // 如果highlightRemark有值，繼續檢查是否所有的值都為 false (true：有需要新增備註)
         return Object.values(remarksForSheet).every((highlight) => !highlight);
@@ -104,6 +117,16 @@ function CheckList() {
 
     checkFormValidity();
   }, [activeButtons, highlightRemarks]);
+
+  useEffect(() => {
+    const dataToSave = {
+      activeButtons,
+      userInput,
+      highlightRemarks,
+      uploadedImages,
+    };
+    localStorage.setItem("checklistData", JSON.stringify(dataToSave));
+  }, [activeButtons, userInput, highlightRemarks, uploadedImages]);
 
   const handleChangeRoad = (road) => {
     setActiveRoad(road);
@@ -142,27 +165,6 @@ function CheckList() {
     console.log("user: ", userInput);
   }, [activeButtons]);
 
-  // const handleImageUpload = (e, remarkId) => {
-  //   const file = e.target.files[0];
-  //   if (file) {
-  //     const reader = new FileReader();
-  //     reader.onload = function (upload) {
-  //       const imgElement = document.createElement("img");
-  //       imgElement.src = upload.target.result;
-  //       imgElement.className = "uploaded-image";
-
-  //       // 选择对应的remark-cell并将图片插入到textarea的下方
-  //       const remarkCell = document.querySelector(`#remark-${remarkId}`);
-  //       const imagePreview = document.createElement("div");
-  //       imagePreview.className = "image-preview";
-  //       imagePreview.appendChild(imgElement);
-
-  //       remarkCell.parentNode.appendChild(imagePreview);
-  //     };
-  //     reader.readAsDataURL(file);
-  //   }
-  // };
-
   const toggleButton = (itemId, option) => {
     // 獲取當前的 item 的索引
     const itemIndex = CheckItems[activeSheet].findIndex(
@@ -178,7 +180,7 @@ function CheckList() {
           [itemId]: option,
         },
       };
-      console.log("Updated active button: ", updatedButtons);
+
       return updatedButtons;
     });
 
@@ -325,6 +327,43 @@ function CheckList() {
       alert("沒有保存的資料可以刪除！");
     }
   };
+  const autoFill = () => {
+    const newActiveButtons = {};
+    const newUserInput = {};
+    const newHighlightRemarks = {};
+
+    roads.forEach((road) => {
+      newActiveButtons[road] = {};
+      newUserInput[road] = {};
+      newHighlightRemarks[road] = {};
+
+      // 不要 `${road}_${item.id}`，直接用 item.id
+      choosingSheet().forEach((sheet) => {
+        CheckItems[sheet].forEach((item) => {
+          const randomOption = Math.random() < 0.5 ? "是" : "否";
+          const id = item.id; // ← 只要檢查代碼本身
+
+          newActiveButtons[road][id] = randomOption;
+
+          // 備註一樣也以相同 id
+          if (
+            (randomOption === "是" && item.asterisk === "yes") ||
+            (randomOption === "否" && item.asterisk === "no")
+          ) {
+            newUserInput[road][id] = "試填";
+            newHighlightRemarks[road][id] = false;
+          } else {
+            newHighlightRemarks[road][id] = false;
+          }
+        });
+      });
+    });
+    setActiveButtons(newActiveButtons);
+    setUserInput(newUserInput);
+    setHighlightRemarks(newHighlightRemarks);
+
+    // 不要再呼叫 checkFormValidity()，useEffect自己會檢查
+  };
 
   return (
     <div className="checklist-container">
@@ -339,7 +378,16 @@ function CheckList() {
           </button>
         ))}
       </div>
-
+      <div
+        className="top-image"
+        style={{ textAlign: "center", marginBottom: "20px" }}
+      >
+        <img
+          src="/img/inspection-location.png"
+          alt="頁面頂部圖片"
+          style={{ maxWidth: "100%", height: "auto" }}
+        />
+      </div>
       {/* 顯示分頁標籤 */}
       <div className="tabs">
         {choosingSheet().map((sheet, index) => (
@@ -365,18 +413,41 @@ function CheckList() {
           </thead>
           <tbody>
             {CheckItems[activeSheet].map((item) => (
-              <tr key={item.id}>
+              <tr key={`${activeRoad}_${item.id}`}>
                 <td>{item.id}</td>
-                <td className="description-cell">{item.description}</td>
+                <td className="description-cell">
+                  <div className="description-content">
+                    {item.description}
+                    {item.image && (
+                      <div className="description-image">
+                        <img
+                          src={item.image}
+                          alt="附圖"
+                          style={{ maxWidth: "100%", marginTop: "8px" }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </td>
 
-                <React.Fragment key={`${item.id}:${activeRoad}`}>
+                <React.Fragment key={`${activeRoad}_${item.id}`}>
                   {/* 选项 */}
                   <td className="option-cell">
                     <div className="option-section">
                       <div className="options">
                         {["無需", "是", "否"].map((label) => (
-                          <div key={`${activeRoad}:${item.id}=${label}`}>
+                          <div key={`${activeRoad}_${item.id}=${label}`}>
                             <button
+                              // className={`bullet-button ${
+                              //   activeButtons[activeRoad]?.[
+                              //     `${activeRoad}_${item.id}`
+                              //   ] === label
+                              //     ? "active"
+                              //     : ""
+                              // }`}
+                              // onClick={() =>
+                              //   toggleButton(`${activeRoad}_${item.id}`, label)
+                              // }
                               className={`bullet-button ${
                                 activeButtons[activeRoad]?.[item.id] === label
                                   ? "active"
@@ -478,6 +549,11 @@ function CheckList() {
         <button className="delete-button" onClick={deleteData}>
           刪除保存的資料
         </button>
+        {process.env.NODE_ENV === "development" && (
+          <button onClick={autoFill} className="auto-fill-button">
+            自動填寫
+          </button>
+        )}
       </div>
     </div>
   );

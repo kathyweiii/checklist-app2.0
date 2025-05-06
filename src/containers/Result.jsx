@@ -5,15 +5,7 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { styles } from "../fonts/styles.js";
 import { tabNames } from "../data/TabNames";
-import {
-  Document,
-  Page,
-  Text,
-  View,
-  StyleSheet,
-  Font,
-  pdf,
-} from "@react-pdf/renderer";
+import { Document, Page, Text, pdf } from "@react-pdf/renderer";
 
 const Result = () => {
   // 假設您從路由中獲取到所需的數據
@@ -29,11 +21,19 @@ const Result = () => {
     roadNames,
     directions,
     roads,
-    activeButtons,
-    highlightRemarks,
-    userInput,
-    uploadedImages,
+    // activeButtons,
+    // highlightRemarks,
+    // userInput,
+    // uploadedImages,
   } = location.state; // 根據需要調整
+
+  const saved = JSON.parse(localStorage.getItem("checklistData")) || {};
+  const {
+    activeButtons: savedButtons = {},
+    userInput: savedInput = {},
+    highlightRemarks: savedHighlights = {},
+    uploadedImages: savedImages = {},
+  } = saved;
 
   const [onlyNonCompliant, setOnlyNonCompliant] = useState(false);
   const [improvementField, setImprovementField] = useState(false);
@@ -46,79 +46,12 @@ const Result = () => {
 
   const pdfRef = useRef(null);
 
-  const [choosingResult, setChoosingResult] = useState(activeButtons);
+  const [choosingResult, setChoosingResult] = useState(savedButtons);
   const [groupedByRoadName, setGroupedByRoadName] = useState({});
 
-  // 從 local storage 加載數據
-  // useEffect(() => {
-  //   console.log("location.state from: ", location.state?.from);
-  //   console.log("@Rusult state: ", location.state);
-
-  //   if (location.state?.from === "CheckList") {
-  //     localStorage.removeItem("outputData");
-  //     console.log("delete outputData");
-  //   } else if (location.state?.from === "Output") {
-  //     const { outputList, improvementInputs } = location.state;
-  //     setOutputList(outputList);
-  //     setImprovementInputs(improvementInputs);
-  //   }
-  //   else {
-  //     ///從output按上一頁回到result: 從location.state或localStorage撈improvementInputs和outputList
-  //     const loadedData = localStorage.getItem("outputData");
-  //     console.log("loadedData: ", loadedData);
-
-  //     if (loadedData) {
-  //       if (Array.isArray(loadedData.outputList)) {
-  //         setOutputList(loadedData.outputList);
-  //         console.log("outputList: ", loadedData.outputList);
-  //       }
-  //       if (Array.isArray(loadedData.improvementInputs)) {
-  //         setImprovementInputs(loadedData.improvementInputs);
-  //         console.log(
-  //           "location.state?.improvementInputs: ",
-  //           location.state?.improvementInputs
-  //         );
-  //       }
-  //     }
-  //   }
-  // }, []);
-
-  // useEffect(() => {
-  //   setCurrentPageCode(
-  //     `${selectedRoad}-${improvementField}-${onlyNonCompliant}`
-  //   );
-
-  //   const compliance = onlyNonCompliant
-  //     ? "具交通安全風險之項目"
-  //     : "所有檢核項目";
-  //   const name = `${selectedRoad}-${compliance}`;
-  //   setCurrentPageName(name);
-  //   console.log("gr:", groupedByRoadName);
-  //   setChoosingResult(onlyNonCompliant ? highlightRemarks : activeButtons);
-  // }, [selectedRoad, onlyNonCompliant, improvementField]);
-
-  // // const choosingResult = onlyNonCompliant ? highlightRemarks : activeButtons;
-  // const groupedByRoadName = roads.reduce((acc, road) => {
-  //   acc[road] = []; // 初始化每個路名的陣列
-
-  //   if (choosingResult[road]) {
-  //     Object.keys(choosingResult[road]).forEach((itemId) => {
-  //       const option = choosingResult[road][itemId];
-  //       const remark = userInput[road]?.[itemId] || "";
-  //       const image = uploadedImages[road]?.[itemId] || "";
-
-  //       acc[road].push({
-  //         id: itemId,
-  //         option: option,
-  //         remark: remark,
-  //         image: image,
-  //       });
-  //     });
-  //   }
-
-  //   // console.log("acc: ", acc, "len: ", acc.length);
-  //   return acc;
-  // }, {});
+  const [progress, setProgress] = useState(0); // 百分比進度
+  const [progressText, setProgressText] = useState(""); // 文字說明
+  const MAX_PAGES_PER_BATCH = 10;
 
   // 更新 currentPageCode 和 currentPageName
   useEffect(() => {
@@ -133,14 +66,8 @@ const Result = () => {
     setCurrentPageName(name);
 
     // 更新 choosingResult
-    setChoosingResult(onlyNonCompliant ? userInput : activeButtons);
-  }, [
-    selectedRoad,
-    onlyNonCompliant,
-    improvementField,
-    highlightRemarks,
-    activeButtons,
-  ]);
+    setChoosingResult(onlyNonCompliant ? savedHighlights : savedButtons);
+  }, [selectedRoad, onlyNonCompliant, improvementField]);
 
   // 更新 groupedByRoadName 當 choosingResult 或其他依賴變數改變時
   useEffect(() => {
@@ -149,9 +76,9 @@ const Result = () => {
 
       if (choosingResult[road]) {
         Object.keys(choosingResult[road]).forEach((itemId) => {
-          const option = activeButtons[road][itemId];
-          const remark = userInput[road]?.[itemId] || "";
-          const image = uploadedImages[road]?.[itemId] || "";
+          const option = savedButtons[road][itemId];
+          const remark = savedHighlights[road]?.[itemId] || "";
+          const image = savedImages[road]?.[itemId] || "";
 
           acc[road].push({
             id: itemId,
@@ -165,15 +92,7 @@ const Result = () => {
     }, {});
 
     setGroupedByRoadName(grouped); // 設置新的 groupedByRoadName
-  }, [choosingResult, roads, userInput, uploadedImages]);
-
-  useEffect(() => {
-    console.log("gr:", groupedByRoadName);
-  }, [groupedByRoadName]);
-
-  useEffect(() => {
-    //因為setChoosingResult, 更新groupedByRoadName
-  });
+  }, [choosingResult, roads]);
 
   // 更新 groupedByRoadName 根據 onlyNonCompliant 狀態動態選擇數據來源
   // const choosingResult = onlyNonCompliant ? highlightRemarks : activeButtons;
@@ -191,120 +110,149 @@ const Result = () => {
   const handleChange = () => {
     const state = {
       ...location.state,
-      activeButtons,
-      userInput,
-      highlightRemarks,
-      uploadedImages,
+      savedButtons,
+      savedHighlights,
+      savedInput,
+      savedImages,
     };
     navigate("/checklist", { state: { ...state, from: "Result" } });
   };
 
-  // // 切換到指定的路段並等待頁面渲染完成
+  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  // 切換到指定的路段並等待頁面渲染完成
   const switchToRoadAndGeneratePDF = async (pageCode, index, isOnly) => {
     setSelectedRoad(pageCode); // 切換到該路段
     setOnlyNonCompliant(isOnly);
-    console.log(`${pageCode}-false-${isOnly}-pdf-content`);
 
-    await waitForElement(`${pageCode}-false-${isOnly}-pdf-content`);
+    const targetId = `${pageCode}-false-${isOnly}-pdf-content`;
+    console.log(`跳轉至 ${targetId}`);
+
+    // 🔁 等待元素實際出現並完成渲染
+    await waitForElement(targetId);
+    await delay(300); // ✅ 可以視需要加一點 delay 確保完全渲染
+
     await generatePDFForRoad(pageCode, index, isOnly);
   };
 
-  const waitForElement = (id) => {
-    return new Promise((resolve) => {
-      const interval = setInterval(() => {
+  const waitForElement = (id, timeout = 5000) => {
+    return new Promise((resolve, reject) => {
+      const start = Date.now();
+
+      const check = () => {
         const element = document.getElementById(id);
         if (element) {
-          clearInterval(interval);
-          console.log("element: ", element);
-
-          resolve(element);
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              resolve(element);
+            });
+          });
+        } else if (Date.now() - start > timeout) {
+          reject(new Error(`元素 ${id} 在 ${timeout}ms 內未出現`));
+        } else {
+          setTimeout(check, 100);
         }
-      }, 100);
+      };
+      check();
     });
   };
+  // const interval = setInterval(() => {
+  //   const element = document.getElementById(id);
+  //   if (element) {
+  //     clearInterval(interval);
+  //     console.log("element: ", element);
+
+  //     resolve(element);
+  //   }
+  // }, 500);
 
   const generatePDFForRoad = async (pageCode, index, isOnly) => {
+    // 1. 取得要截圖的元素
     const element = document.getElementById(
       `${pageCode}-false-${isOnly}-pdf-content`
     );
-    const canvas = await html2canvas(element);
-    const pageWidth = 210 - 20; // A4 的寬度，單位是 mm
-    const pageHeight = 297;
-    const margin = 10;
-    const usablePageHeight = pageHeight - margin * 2;
-    let imgYPosition = 0;
+    if (!element) return;
 
-    const imgData = canvas.toDataURL("image/png");
+    // 2. 初始化 jsPDF（A4 尺寸），仅对第一条路执行一次
+    if (index === 0) {
+      pdfRef.current = new jsPDF("p", "mm", "a4");
+    }
+    const pdf = pdfRef.current;
 
-    const imgHeight = (canvas.height * pageWidth) / canvas.width;
+    // 3. 计算 PDF 页面和图片参数
+    const pageW = pdf.internal.pageSize.getWidth(); // 210 mm
+    const pageH = pdf.internal.pageSize.getHeight(); // 297 mm
+    const margin = 10; // 10 mm 白边
+    const usableW = pageW - margin * 2; // 可用宽度
+    const usableH = pageH - margin * 2; // 可用高度
 
-    if (imgHeight <= usablePageHeight) {
-      // 如果內容高度在一頁範圍內，則只添加一頁
-      pdfRef.current.addImage(
-        imgData,
-        "PNG",
-        margin,
-        margin,
-        pageWidth,
-        imgHeight
-      );
-    } else {
-      // 如果內容超過一頁，進行分頁裁剪
-      const originalCanvas = canvas;
-      const ctx = originalCanvas.getContext("2d");
+    // 4. 像素 ↔ 毫米 转换比 (假定 96 DPI)
+    const pxPerMm = 96 / 25.4;
+    // 目标画布宽度 (px)，确保画布宽度对应 PDF 中的 usableW
+    const targetCanvasWidthPx = usableW * pxPerMm;
 
-      let remainingHeight = canvas.height;
+    // 5. 临时强制 element 宽度，使 html2canvas 输出固定宽度
+    const originalStyleWidth = element.style.width;
+    element.style.width = `${targetCanvasWidthPx}px`;
 
-      while (remainingHeight > 0) {
-        if (imgYPosition > 0) {
-          pdfRef.current.addPage(); // 添加新頁面
-        }
+    // 6. 用 html2canvas 渲染整张 canvas，不依赖屏幕分辨率
+    const canvas = await html2canvas(element, {
+      useCORS: true,
+      scale: 1,
+      width: element.scrollWidth,
+      height: element.scrollHeight,
+      windowWidth: element.scrollWidth,
+      windowHeight: element.scrollHeight,
+    });
 
-        // 新建一個 canvas，將原始 canvas 中的一部分複製到這個 canvas
-        const tempCanvas = document.createElement("canvas");
-        tempCanvas.width = canvas.width;
-        tempCanvas.height = Math.min(
-          (usablePageHeight * canvas.width) / pageWidth,
-          remainingHeight
-        ); // 高度按比例裁剪
+    // 恢复原始宽度
+    element.style.width = originalStyleWidth;
 
-        const tempCtx = tempCanvas.getContext("2d");
+    // 7. 准备分页切片参数
+    const imgWidthPx = canvas.width; // 应等于 targetCanvasWidthPx
+    const imgWidthMm = usableW; // PDF 中插入图片的宽度 (mm)
+    const sliceHeightPx = usableH * pxPerMm; // 每页对应的画布高度 (px)
 
-        // 從原始 canvas 複製對應位置的圖像到臨時 canvas
-        tempCtx.drawImage(
-          originalCanvas,
+    // 8. 按页切片并插入 PDF
+    let yPx = 0;
+    let pageIndex = 0;
+    while (yPx < canvas.height) {
+      const thisSlicePx = Math.min(sliceHeightPx, canvas.height - yPx);
+
+      // 新建临时 canvas，仅存本页图
+      const tmp = document.createElement("canvas");
+      tmp.width = imgWidthPx;
+      tmp.height = thisSlicePx;
+      tmp
+        .getContext("2d")
+        .drawImage(
+          canvas,
           0,
-          imgYPosition,
-          canvas.width,
-          tempCanvas.height,
+          yPx,
+          imgWidthPx,
+          thisSlicePx,
           0,
           0,
-          canvas.width,
-          tempCanvas.height
+          imgWidthPx,
+          thisSlicePx
         );
 
-        // 獲取這一部分的圖像數據
-        const tempImgData = tempCanvas.toDataURL("image/png");
+      // 导出本页图片数据
+      const sliceData = tmp.toDataURL("image/png");
 
-        // 將裁剪後的圖像數據插入到 PDF
-        pdfRef.current.addImage(
-          tempImgData,
-          "PNG",
-          margin,
-          margin,
-          pageWidth,
-          (tempCanvas.height * pageWidth) / canvas.width
-        );
+      // 计算本页高度 (mm)
+      const sliceHeightMm = thisSlicePx / pxPerMm;
 
-        // 更新剩餘的高度和 Y 偏移量
-        remainingHeight -= tempCanvas.height;
-        imgYPosition += tempCanvas.height;
-      }
+      // 每页前插入新页（0 号页除外）
+      if (pageIndex > 0) pdf.addPage();
+      pdf.addImage(sliceData, "PNG", margin, margin, imgWidthMm, sliceHeightMm);
+
+      yPx += thisSlicePx;
+      pageIndex++;
     }
 
-    if (index < roadNames.length - 1) {
-      pdfRef.current.addPage(); // 如果有下一頁，添加新頁面
-    }
+    // 9. 如果不是最后一条路，添加一页空白分隔
+    if (index < roadNames.length - 1) pdf.addPage();
   };
 
   const FirstPDFDocument = () => (
@@ -319,22 +267,91 @@ const Result = () => {
     </Document>
   );
 
-  const loadDisclaimerPDF = async () => {
-    const response = await fetch(`${process.env.PUBLIC_URL}/disclaimer.pdf`); // 填寫disclaimer.pdf的路徑
-    const arrayBuffer = await response.arrayBuffer(); // 獲取 PDF 的字節數據
-    return arrayBuffer;
-  };
-
   const generatedMultiplePDF = async (isOnly) => {
-    pdfRef.current = new jsPDF("p", "mm", "a4");
+    // pdfRef.current = new jsPDF("p", "mm", "a4");
+
+    const pdfBuffers = [];
+    let pageCounter = 0;
     const roads = Object.keys(groupedByRoadName);
+
     for (let i = 0; i < roads.length; i++) {
       const road = roads[i];
-      console.log("generatedMultiplePDF....");
+      console.log("generatedMultiplePDF: 開始處理", road);
 
-      await switchToRoadAndGeneratePDF(road, i, isOnly); // 切換並生成 PDF
+      // setProgressText(`正在處理第 ${i + 1} / ${roads.length} 條道路...`);
+      // setProgress(Math.round(((i + 1) / roads.length) * 100));
+
+      // await switchToRoadAndGeneratePDF(road, i, isOnly); // Switch and generate PDF
+      // console.log(`road-i-isOnly: ${road}-${i}-${isOnly}`);
+      // }
+      if (!pdfRef.current || pageCounter >= MAX_PAGES_PER_BATCH) {
+        if (pdfRef.current) {
+          try {
+            const blob = await pdfRef.current.output("blob");
+            console.log(
+              "即將輸出 PDF，目前頁數：",
+              pdfRef.current.internal.getNumberOfPages()
+            );
+            console.log("pdfRef.current 內容：", pdfRef.current);
+
+            // ✅ 安全檢查
+            if (!blob) {
+              throw new Error("jsPDF.output('blob') 回傳為 null/undefined！");
+            }
+
+            const buffer = await blob.arrayBuffer();
+            pdfBuffers.push(buffer);
+            console.log(
+              "成功儲存一批 PDF buffer，頁數：",
+              pdfRef.current.internal.getNumberOfPages()
+            );
+          } catch (err) {
+            console.error("PDF 輸出失敗！", err);
+          }
+        }
+
+        pdfRef.current = new jsPDF("p", "mm", "a4");
+        pageCounter = 1; // ✅ 因為我們真的加了一頁內容
+
+        // console.log("reset pageCounter: ", pageCounter);
+      }
+
+      const beforeCount = pdfRef.current.internal.getNumberOfPages();
+      await switchToRoadAndGeneratePDF(road, i, isOnly);
+      const afterCount = pdfRef.current.internal.getNumberOfPages();
+      pageCounter += afterCount - beforeCount;
+      console.log("pageCounter: ", pageCounter);
     }
-    return pdfRef.current.output("arraybuffer");
+    // for (let i = 0; i < roads.length; i++) {
+    //   const road = roads[i];
+    //   console.log("generatedMultiplePDF....");
+
+    //   await switchToRoadAndGeneratePDF(road, i, isOnly); // 切換並生成 PDF
+    //   console.log(`road-i-isOnly: ${road}-${i}-${isOnly}`);
+    // }
+    // 分批生成 PDF
+    // const batchSize = 5; // 每批處理的數量
+    // for (let i = 0; i < roads.length; i += batchSize) {
+    //   const batch = roads.slice(i, i + batchSize);
+    //   await generatePDFBatch(batch, isOnly);
+    // }
+
+    if (pdfRef.current) {
+      const numPages = pdfRef.current.internal.getNumberOfPages?.() || 0;
+      if (numPages > 0) {
+        try {
+          const buffer = pdfRef.current.output("arraybuffer");
+          pdfBuffers.push(buffer);
+          console.log("成功輸出 buffer，頁數：", numPages);
+        } catch (err) {
+          console.error("PDF 輸出失敗（非空頁）", err);
+        }
+      } else {
+        console.warn("跳過空 PDF，不輸出！");
+      }
+    }
+
+    return pdfBuffers;
   };
 
   const generatedFirstPDF = async () => {
@@ -344,11 +361,7 @@ const Result = () => {
   };
 
   const { PDFDocument } = require("pdf-lib");
-  const mergePDFs = async (
-    coverPageBytes,
-    multiPageBytes,
-    disclaimerPageBytes
-  ) => {
+  const mergePDFs = async (coverPageBytes, pdfBuffers) => {
     // 創建一個新的 PDF 文檔來合併
     const finalPdf = await PDFDocument.create();
 
@@ -360,36 +373,33 @@ const Result = () => {
     );
     coverPages.forEach((page) => finalPdf.addPage(page));
 
-    // 加載多頁的 PDF
-    const multiPdfDoc = await PDFDocument.load(multiPageBytes);
-    const multiPages = await finalPdf.copyPages(
-      multiPdfDoc,
-      multiPdfDoc.getPageIndices()
-    );
-    multiPages.forEach((page) => finalPdf.addPage(page));
-
-    // 加載免責聲明頁 PDF
-    // const disclaimerPdfDoc = await PDFDocument.load(disclaimerPageBytes);
-    // const disclaimerPages = await finalPdf.copyPages(
-    //   disclaimerPdfDoc,
-    //   disclaimerPdfDoc.getPageIndices()
+    // // 加載多頁的 PDF
+    // const multiPdfDoc = await PDFDocument.load(multiPageBytes);
+    // const multiPages = await finalPdf.copyPages(
+    //   multiPdfDoc,
+    //   multiPdfDoc.getPageIndices()
     // );
-    // disclaimerPages.forEach((page) => finalPdf.addPage(page));
+    // multiPages.forEach((page) => finalPdf.addPage(page));
 
-    // 保存並返回最終合併後的 PDF 字節
+    // 加入每一個內容 PDF
+    for (let i = 0; i < pdfBuffers.length; i++) {
+      console.log(`pdfBuffers: ${pdfBuffers.length}, now i = ${i}`);
+      const contentPdfDoc = await PDFDocument.load(pdfBuffers[i]);
+      const contentPages = await finalPdf.copyPages(
+        contentPdfDoc,
+        contentPdfDoc.getPageIndices()
+      );
+      contentPages.forEach((page) => finalPdf.addPage(page));
+    }
     return await finalPdf.save();
   };
 
   const processQueue = async (isOnly) => {
     setIsLoading(true);
-    const multiPageBytes = await generatedMultiplePDF(isOnly);
+    const multiPageBuffers = await generatedMultiplePDF(isOnly); // ← 現在是一個 Array
     const coverPageBytes = await generatedFirstPDF();
-    const disclaimerPageBytes = await loadDisclaimerPDF();
-    const mergedPdfBytes = await mergePDFs(
-      coverPageBytes,
-      multiPageBytes,
-      disclaimerPageBytes
-    );
+    const mergedPdfBytes = await mergePDFs(coverPageBytes, multiPageBuffers);
+
     const blob = new Blob([mergedPdfBytes], { type: "application/pdf" });
     const blobUrl = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -399,6 +409,8 @@ const Result = () => {
     }.pdf`;
     link.click();
     setIsLoading(false);
+    setProgress(0);
+    setProgressText("");
   };
 
   return (
@@ -426,6 +438,33 @@ const Result = () => {
         <div className="loading-overlay">
           <div className="loading-message">輸出中...請稍候</div>
         </div>
+        // <div
+        //   style={{
+        //     padding: "12px",
+        //     backgroundColor: "#f9f9f9",
+        //     borderRadius: "8px",
+        //   }}
+        // >
+        //   <p>{progressText}</p>
+        //   <div
+        //     style={{
+        //       width: "100%",
+        //       backgroundColor: "#eee",
+        //       height: "10px",
+        //       borderRadius: "5px",
+        //     }}
+        //   >
+        //     <div
+        //       style={{
+        //         width: `${progress}%`,
+        //         height: "100%",
+        //         backgroundColor: "#4caf50",
+        //         transition: "width 0.3s ease",
+        //         borderRadius: "5px",
+        //       }}
+        //     />
+        //   </div>
+        // </div>
       )}
       <div
         className="result-container"
@@ -578,15 +617,20 @@ const Result = () => {
                 </thead>
                 <tbody>
                   {groupedByRoadName[selectedRoad].map((item, index) => {
+                    const parts = item.id.split("_");
+                    const realId = parts[parts.length - 1];
+
                     // 根據 item 獲取對應的 CheckItems 項目
                     const checkItem = Object.values(CheckItems)
                       .flat()
-                      .find((check) => check.id === item.id);
+                      .find((check) => check.id === realId);
                     const sheet = getSheetById(item.id);
                     const isFirstInSheet =
                       index === 0 ||
                       getSheetById(
                         groupedByRoadName[selectedRoad][index - 1].id
+                          .split("_")
+                          .pop()
                       ) !== sheet;
 
                     return (
@@ -597,6 +641,7 @@ const Result = () => {
                               colSpan={onlyNonCompliant ? 5 : 4}
                               style={{
                                 fontWeight: "bold",
+
                                 padding: "10px",
                                 backgroundColor: "#f9f9f9", // 柔和的背景色
                               }}
@@ -607,9 +652,12 @@ const Result = () => {
                         )}
                         <tr>
                           <td style={{ textAlign: "center" }}>
-                            {sheet} {item.id}
+                            {sheet} {realId}
                           </td>
-                          <td>{checkItem.description}</td>
+                          <td className="description-cell">
+                            {checkItem.description}
+                          </td>
+
                           <td>
                             {item.option}
                             {item.option === "是" &&
