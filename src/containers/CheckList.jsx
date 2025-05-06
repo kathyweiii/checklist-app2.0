@@ -50,25 +50,6 @@ function CheckList() {
     localStorage.setItem("checklistData", JSON.stringify(toSave));
   }, [activeButtons, userInput, highlightRemarks, uploadedImages]);
 
-  // 從 local storage 加載數據
-  // useEffect(() => {
-  //   // console.log("from: ", location.state?.from);
-
-  //   if (location.state?.from === "HomePage") {
-  //     localStorage.clear();
-  //     console.log("local: ", localStorage);
-  //   } else {
-  //     const loadedData = localStorage.getItem("checklistData");
-  //     if (loadedData) {
-  //       const parsedData = JSON.parse(loadedData);
-  //       setActiveButtons(parsedData.activeButtons || {});
-  //       setUserInput(parsedData.userInput || {});
-  //       setHighlightRemarks(parsedData.highlightRemarks || {});
-  //       setUploadedImages(parsedData.uploadedImages || {});
-  //     }
-  //   }
-  // }, [location]);
-
   //送出按鈕
   useEffect(() => {
     const checkFormValidity = () => {
@@ -77,12 +58,6 @@ function CheckList() {
         return sum + sheetItemCount;
       }, 0);
 
-      // const totalActiveButtons = Object.values(activeButtons).reduce(
-      //   (sum, item) => {
-      //     return sum + Object.keys(item).length;
-      //   },
-      //   0
-      // );
       const totalActiveButtons = roads.reduce((sum, road) => {
         const keys = Object.keys(activeButtons[road] || {});
         console.log(`• 路段 [${road}] 已选按钮：`, keys);
