@@ -358,7 +358,7 @@ function CheckList() {
         style={{ textAlign: "center", marginBottom: "20px" }}
       >
         <img
-          src="/img/inspection-location.png"
+          src={process.env.PUBLIC_URL + "/img/inspection-location.png"}
           alt="頁面頂部圖片"
           style={{ maxWidth: "100%", height: "auto" }}
         />
