@@ -360,8 +360,6 @@ const Result = () => {
     }.pdf`;
     link.click();
     setIsLoading(false);
-    setProgress(0);
-    setProgressText("");
   };
 
   return (
