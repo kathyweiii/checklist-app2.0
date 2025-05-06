@@ -21,10 +21,6 @@ const Result = () => {
     roadNames,
     directions,
     roads,
-    // activeButtons,
-    // highlightRemarks,
-    // userInput,
-    // uploadedImages,
   } = location.state; // 根據需要調整
 
   const saved = JSON.parse(localStorage.getItem("checklistData")) || {};
@@ -49,11 +45,8 @@ const Result = () => {
   const [choosingResult, setChoosingResult] = useState(savedButtons);
   const [groupedByRoadName, setGroupedByRoadName] = useState({});
 
-  const [progress, setProgress] = useState(0); // 百分比進度
-  const [progressText, setProgressText] = useState(""); // 文字說明
   const MAX_PAGES_PER_BATCH = 10;
 
-  // 更新 currentPageCode 和 currentPageName
   useEffect(() => {
     setCurrentPageCode(
       `${selectedRoad}-${improvementField}-${onlyNonCompliant}`
@@ -93,9 +86,6 @@ const Result = () => {
 
     setGroupedByRoadName(grouped); // 設置新的 groupedByRoadName
   }, [choosingResult, roads]);
-
-  // 更新 groupedByRoadName 根據 onlyNonCompliant 狀態動態選擇數據來源
-  // const choosingResult = onlyNonCompliant ? highlightRemarks : activeButtons;
 
   // 根據檢查代碼的ID來獲取它所屬的sheet
   const getSheetById = (id) => {
@@ -156,15 +146,6 @@ const Result = () => {
       check();
     });
   };
-  // const interval = setInterval(() => {
-  //   const element = document.getElementById(id);
-  //   if (element) {
-  //     clearInterval(interval);
-  //     console.log("element: ", element);
-
-  //     resolve(element);
-  //   }
-  // }, 500);
 
   const generatePDFForRoad = async (pageCode, index, isOnly) => {
     // 1. 取得要截圖的元素
@@ -277,13 +258,6 @@ const Result = () => {
     for (let i = 0; i < roads.length; i++) {
       const road = roads[i];
       console.log("generatedMultiplePDF: 開始處理", road);
-
-      // setProgressText(`正在處理第 ${i + 1} / ${roads.length} 條道路...`);
-      // setProgress(Math.round(((i + 1) / roads.length) * 100));
-
-      // await switchToRoadAndGeneratePDF(road, i, isOnly); // Switch and generate PDF
-      // console.log(`road-i-isOnly: ${road}-${i}-${isOnly}`);
-      // }
       if (!pdfRef.current || pageCounter >= MAX_PAGES_PER_BATCH) {
         if (pdfRef.current) {
           try {
@@ -312,8 +286,6 @@ const Result = () => {
 
         pdfRef.current = new jsPDF("p", "mm", "a4");
         pageCounter = 1; // ✅ 因為我們真的加了一頁內容
-
-        // console.log("reset pageCounter: ", pageCounter);
       }
 
       const beforeCount = pdfRef.current.internal.getNumberOfPages();
@@ -322,19 +294,6 @@ const Result = () => {
       pageCounter += afterCount - beforeCount;
       console.log("pageCounter: ", pageCounter);
     }
-    // for (let i = 0; i < roads.length; i++) {
-    //   const road = roads[i];
-    //   console.log("generatedMultiplePDF....");
-
-    //   await switchToRoadAndGeneratePDF(road, i, isOnly); // 切換並生成 PDF
-    //   console.log(`road-i-isOnly: ${road}-${i}-${isOnly}`);
-    // }
-    // 分批生成 PDF
-    // const batchSize = 5; // 每批處理的數量
-    // for (let i = 0; i < roads.length; i += batchSize) {
-    //   const batch = roads.slice(i, i + batchSize);
-    //   await generatePDFBatch(batch, isOnly);
-    // }
 
     if (pdfRef.current) {
       const numPages = pdfRef.current.internal.getNumberOfPages?.() || 0;
@@ -372,14 +331,6 @@ const Result = () => {
       coverPdfDoc.getPageIndices()
     );
     coverPages.forEach((page) => finalPdf.addPage(page));
-
-    // // 加載多頁的 PDF
-    // const multiPdfDoc = await PDFDocument.load(multiPageBytes);
-    // const multiPages = await finalPdf.copyPages(
-    //   multiPdfDoc,
-    //   multiPdfDoc.getPageIndices()
-    // );
-    // multiPages.forEach((page) => finalPdf.addPage(page));
 
     // 加入每一個內容 PDF
     for (let i = 0; i < pdfBuffers.length; i++) {
@@ -438,33 +389,6 @@ const Result = () => {
         <div className="loading-overlay">
           <div className="loading-message">輸出中...請稍候</div>
         </div>
-        // <div
-        //   style={{
-        //     padding: "12px",
-        //     backgroundColor: "#f9f9f9",
-        //     borderRadius: "8px",
-        //   }}
-        // >
-        //   <p>{progressText}</p>
-        //   <div
-        //     style={{
-        //       width: "100%",
-        //       backgroundColor: "#eee",
-        //       height: "10px",
-        //       borderRadius: "5px",
-        //     }}
-        //   >
-        //     <div
-        //       style={{
-        //         width: `${progress}%`,
-        //         height: "100%",
-        //         backgroundColor: "#4caf50",
-        //         transition: "width 0.3s ease",
-        //         borderRadius: "5px",
-        //       }}
-        //     />
-        //   </div>
-        // </div>
       )}
       <div
         className="result-container"
