@@ -524,11 +524,10 @@ function CheckList() {
         <button className="delete-button" onClick={deleteData}>
           刪除保存的資料
         </button>
-        {process.env.NODE_ENV === "development" && (
-          <button onClick={autoFill} className="auto-fill-button">
-            自動填寫
-          </button>
-        )}
+
+        <button onClick={autoFill} className="auto-fill-button">
+          自動填寫
+        </button>
       </div>
     </div>
   );
